@@ -1,107 +1,141 @@
 package com.movie.app.feature.presentation.home
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
-import coil.compose.rememberImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.movie.app.feature.domain.model.MovieModel
 
 @Composable
 fun MovieScreen(
+    modifier: Modifier = Modifier,
     viewModel: MovieViewModel = hiltViewModel(),
-    modifier: Modifier,
     onItemClick: (movieId: Int) -> Unit
 ) {
     val movies = viewModel.moviesState.collectAsLazyPagingItems()
-    val searchQuery = viewModel.searchQuery.collectAsStateWithLifecycle().value
+    val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier) {
-        TextField(
+    Column(modifier = modifier.fillMaxSize()) {
+        OutlinedTextField(
             value = searchQuery,
-            onValueChange = { query ->
-                viewModel.searchMovie(query)
-            },
-            label = { Text("Search movies") }
+            onValueChange = { query -> viewModel.searchMovie(query) },
+            label = { Text("Search Movies") },
+            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+                .background(Color.Transparent),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                unfocusedBorderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            )
         )
 
-
-        LazyColumn {
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
                 val movie = movies[index]
-                if (movie != null)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onItemClick(movie.id) }
-                            .padding(16.dp)
-                    ) {
-                        MovieItem(movie) {
-                            viewModel.toggleWatchlist(movie)
-                        }
-                    }
-
+                if (movie != null) {
+                    MovieCard(movie = movie, onItemClick = { onItemClick(movie.id) }, onWatchlistClick = {
+                        viewModel.toggleWatchlist(movie)
+                    })
+                }
             }
         }
     }
 }
 
 @Composable
-fun MovieItem(movie: MovieModel, onClick: () -> Unit) {
-    Row(
+fun MovieCard(
+    movie: MovieModel,
+    onItemClick: () -> Unit,
+    onWatchlistClick: () -> Unit
+) {
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
+            .clickable { onItemClick() }
     ) {
-        Image(
-            painter = rememberImagePainter("https://image.tmdb.org/t/p/w500${movie.posterPath}"),
-            contentDescription = movie.title,
-            modifier = Modifier
-                .width(100.dp)
-                .height(150.dp)
-        )
-
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp)
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(12.dp)
         ) {
-            Text(
-                text = movie.title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
+            Image(
+                painter = rememberAsyncImagePainter("https://image.tmdb.org/t/p/w500${movie.posterPath}"),
+                contentDescription = movie.title,
+                modifier = Modifier
+                    .width(100.dp)
+                    .height(150.dp)
+                    .clip(RoundedCornerShape(12.dp))
             )
 
-            Text(
-                text = movie.overview,
-                fontSize = 14.sp
-            )
+            Spacer(modifier = Modifier.width(16.dp))
 
-            Text(
-                text = movie.releaseDate,
-                fontSize = 14.sp
-            )
-
-            Button(onClick = onClick) {
-                Text(text = if (movie.isWatchListed) "Remove from watchlist" else "Add to watchlist")
+            Column(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .weight(1f),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = movie.title,
+                    fontSize = 18.sp,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = movie.overview,
+                    fontSize = 14.sp,
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 3
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Release: ${movie.releaseDate}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onWatchlistClick,
+                    shape = RoundedCornerShape(50),
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Icon(
+                        imageVector = if (movie.isWatchListed) Icons.Default.Delete else Icons.Default.Add,
+                        contentDescription = null
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = if (movie.isWatchListed) "Remove" else "Watchlist"
+                    )
+                }
             }
         }
     }
