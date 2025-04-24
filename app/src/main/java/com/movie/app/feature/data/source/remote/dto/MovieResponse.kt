@@ -13,6 +13,7 @@ data class MovieResponse(
     @SerializedName("total_results")
     val totalResults: Int
 ) {
+
     data class MovieDto(
         @SerializedName("id")
         val id: Int,
@@ -23,7 +24,7 @@ data class MovieResponse(
         @SerializedName("release_date")
         val releaseDate: String,
         @SerializedName("poster_path")
-        val posterPath: String,
+        val posterPath: String?,
         val isWatchListed: Boolean = false
     )
 }

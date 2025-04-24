@@ -1,21 +1,16 @@
-package com.movie.app
+package com.movie.app.feature.presentation.home
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -23,43 +18,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemKey
 import coil.compose.rememberImagePainter
 import com.movie.app.feature.domain.model.MovieModel
-import com.movie.app.feature.presentation.MovieViewModel
-import com.movie.app.ui.theme.MyApplicationTheme
-import dagger.hilt.android.AndroidEntryPoint
-
-@AndroidEntryPoint
-class MainActivity : ComponentActivity() {
-    private lateinit var navController: NavHostController
-    private val viewModel: MovieViewModel by viewModels()
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-
-        setContent {
-            MyApplicationTheme {
-                navController = rememberNavController()
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-
-                    MovieScreen(viewModel, Modifier.padding(innerPadding))
-                }
-            }
-        }
-
-
-    }
-}
 
 @Composable
-fun MovieScreen(viewModel: MovieViewModel = viewModel(), modifier: Modifier) {
+fun MovieScreen(
+    viewModel: MovieViewModel = hiltViewModel(),
+    modifier: Modifier,
+    onItemClick: (movieId: Int) -> Unit
+) {
     val movies = viewModel.moviesState.collectAsLazyPagingItems()
     val searchQuery = viewModel.searchQuery.collectAsStateWithLifecycle().value
 
@@ -77,9 +48,17 @@ fun MovieScreen(viewModel: MovieViewModel = viewModel(), modifier: Modifier) {
             items(count = movies.itemCount, key = movies.itemKey { it.id }) { index ->
                 val movie = movies[index]
                 if (movie != null)
-                    MovieItem(movie) {
-                        viewModel.toggleWatchlist(movie)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onItemClick(movie.id) }
+                            .padding(16.dp)
+                    ) {
+                        MovieItem(movie) {
+                            viewModel.toggleWatchlist(movie)
+                        }
                     }
+
             }
         }
     }

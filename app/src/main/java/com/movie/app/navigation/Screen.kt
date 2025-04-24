@@ -5,7 +5,7 @@ sealed class Screen(
 ){
     data object MoviesHomeScreen: Screen("movies_home")
     data object MovieDetailsScreen: Screen("movie_details/{${MOVIE_ID_ARGUMENT}}"){
-        fun setMovieId(id: String):String{
+        fun setMovieId(id: Int):String{
             return "movie_details/$id"
         }
     }
